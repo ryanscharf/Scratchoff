@@ -74,7 +74,8 @@ calc_ev <- function(cost, odds_denomintor, win){
         )
       )
       
-      
+    num_printed_tickets <- ((1-(1/overall_odds_d)) * sum(test$total_prizes)) + sum(test$total_prizes)
+    
     ticket_price <- text[grepl('Ticket Price', text)]
      ticket_price <- as.numeric(
        stringr::str_extract(
