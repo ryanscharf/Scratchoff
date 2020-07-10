@@ -137,7 +137,7 @@ get_granular_info <- function(x) {
 }
 
 game_values <- purrr::map(games_enh$game_number, get_granular_info) %>% bind_rows()
-games_enh <- games_enh %>% left_join(game_values) %>% its stil
+games_enh <- games_enh %>% left_join(game_values) %>% 
     filter(
         !game_number %in% 
             (count(games_enh, game_number) %>% filter(n>1) %>% pull(game_number)
