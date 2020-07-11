@@ -166,8 +166,10 @@ shinyApp(
                    selectInput("cost",
                                "Ticket Cost:",
                                c("All",
-                                 unique(as.character(output_table$ticket_cost))),
-                               multiple = T)
+                                 sort(unique(output_table$ticket_cost))),
+                               multiple = T,
+                               selectize = T,
+                               selected = 'All')
             )#,
             # column(4,
             #        selectInput("trans",
