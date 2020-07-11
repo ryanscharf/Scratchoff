@@ -149,10 +149,10 @@ output_table <-
         game_name,
         ticket_cost,
         top_prize,
+        expected_value_current,
         top_prizes,
         top_prizes_remaining,
-        expected_value_orig,
-        expected_value_current
+        expected_value_orig
     ) %>%
     mutate(
         expected_value_orig = as.numeric(prettyNum(expected_value_orig, digits = 3, format = 'f')),
