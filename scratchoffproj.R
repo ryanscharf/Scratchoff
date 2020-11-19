@@ -3,6 +3,8 @@ library(rvest)
 library(jsonlite)
 library(janitor)
 library(lubridate)
+library(RMySQL)
+library(DBI)
 #library(taskscheduleR)
 
 
@@ -57,49 +59,12 @@ games_enh <-
 
 game_url <-  'https://www.flalottery.com/scratch-offsGameDetails?gameNumber='
 #game_tbl <- 
-  
+
 calc_ev <- function(cost, odds_denomintor, win){
   ev <- (win * 1/odds_denomintor) - (cost * (1-1/odds_denomintor))
   return(ev)
-  }
-  
-<<<<<<< HEAD
-  get_granular_info <- function(x){
-    text <- xml2::read_html(paste0(game_url,x)) %>%
-      html_nodes(xpath = '//p') %>% html_text()
-    overall_odds <- text[grepl('Overall Odds', text)]
-    overall_odds_d <- as.numeric(
-      stringr::str_extract(
-        overall_odds,
-        '(?<=Overall Odds: 1-in-).*'
-        )
-      )
-      
-    num_printed_tickets <- ((1-(1/overall_odds_d)) * sum(test$total_prizes)) + sum(test$total_prizes)
-    
-    ticket_price <- text[grepl('Ticket Price', text)]
-     ticket_price <- as.numeric(
-       stringr::str_extract(
-       ticket_price,
-       '(?<=Ticket Price:\\s\\$).*(?=L)'
-       )
-     )
-     
-    xml2::read_html(paste0(game_url,x)) %>%
-      html_node(xpath = '//*[contains(concat( " ", @class, " " ), concat( " ", "column2", " " ))]') %>% 
-      html_nodes('table') %>% 
-      html_table() %>% .[[1]] %>% clean_names() %>%
-      mutate(
-        prize_amount = parse_number(prize_amount),
-        odds_denominator = parse_number(
-          str_remove(
-            odds_of_winning, 
-            '1-in-')
-          ),
-        odds_of_winning = 1/odds_denominator
-        )
-  }
-=======
+}
+
 
 get_granular_info <- function(x) {
   page <- xml2::read_html(paste0(game_url, x)) 
@@ -127,9 +92,9 @@ get_granular_info <- function(x) {
     stringr::str_extract(
       overall_odds,
       '(?<=Overall Odds: 1-in-).*'
-      )
     )
-
+  )
+  
   num_printed_tickets <-
     tbl %>% 
     slice(1) %>% 
@@ -137,7 +102,7 @@ get_granular_info <- function(x) {
     pull(total_tickets)
   
   losing_tix <- num_printed_tickets - sum(tbl$total_prizes) 
-    # ((1 - (1 / overall_odds_d)) * sum(tbl$total_prizes)) + sum(tbl$total_prizes)
+  # ((1 - (1 / overall_odds_d)) * sum(tbl$total_prizes)) + sum(tbl$total_prizes)
   num_current_tickets_losing = (sum(tbl$prizes_remaining))/sum(tbl$total_prizes) * losing_tix
   num_current_tickets_total = num_current_tickets_losing + sum(tbl$prizes_remaining)
   p_0 <- 1 - sum(tbl$odds_of_winning)
@@ -147,9 +112,9 @@ get_granular_info <- function(x) {
     stringr::str_extract(
       ticket_price,
       '(?<=Ticket Price:\\s\\$).*(?=L)'
-      )
     )
-
+  )
+  
   tbl <- tbl %>% mutate(expected_return_orig = odds_of_winning * prize_amount,
                         current_odds = prizes_remaining/num_current_tickets_losing,
                         expected_return_current = current_odds * prize_amount)
@@ -160,7 +125,7 @@ get_granular_info <- function(x) {
       expected_return_current = sum(expected_return_current),
       expected_value_orig     =  sum(expected_return_orig) - ticket_price,
       expected_value_current  = sum(expected_return_current) - ticket_price
-      )
+    )
   expected_value_o <- expected_values %>% pull(expected_value_orig)
   expected_value_c <- expected_values %>% pull(expected_value_current)
   
@@ -176,7 +141,7 @@ get_granular_info <- function(x) {
                           expected_values,
                           total_prizes = sum(tbl$total_prizes),
                           remaining_prizes = sum(tbl$prizes_remaining))
-  }
+}
 
 game_values <- purrr::map(games_enh$game_number, get_granular_info) %>% bind_rows()
 
@@ -184,8 +149,8 @@ games_enh <- games_enh %>% left_join(game_values) %>%
   filter(
     !game_number %in% 
       (count(games_enh, game_number) %>% filter(n>1) %>% pull(game_number)
-       )
-    )
+      )
+  )
 
 output_table <-
   games_enh %>% select(
@@ -201,4 +166,5 @@ output_table <-
     expected_value_orig = as.numeric(prettyNum(expected_value_orig, digits = 3, format = 'f')),
     expected_value_current = as.numeric(prettyNum(expected_value_current, digits = 3, format = 'f'))
   )
->>>>>>> 1d0cc038b148a54e634be5b5e4c4b3f3ff1df341
+
+games_enh <- games_enh %>% mutate(AOdate = today())
