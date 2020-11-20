@@ -254,17 +254,20 @@ game_prizes <- purrr::map_df(games_enh$game_number, get_granular_info_prizes) %>
 )
 
 game_summaries <-
-  game_prizes %>% 
-  left_join(select(games_enh, game_number, ticket_cost)) %>%
+  game_prizes %>% ungroup() %>% 
+  left_join(
+    select(games_enh, game_number, ticket_cost)
+  ) %>%
   group_by(game_number, AOdate) %>% 
   summarize(
     expected_return_orig    = sum(expected_return_orig),
     expected_return_current = sum(expected_return_current),
-    expected_value_orig     =  sum(expected_return_orig) - ticket_cost,
-    expected_value_current  = sum(expected_return_current) - ticket_cost,
+    expected_value_orig     =  sum(expected_return_orig) - unique(ticket_cost),
+    expected_value_current  = sum(expected_return_current) - unique(ticket_cost),
     total_prizes = sum(total_prizes),
     prizes_remaining = sum(prizes_remaining)
   ) %>% ungroup()
+
 
 game_info <- games_enh %>% 
   select(game_number,
