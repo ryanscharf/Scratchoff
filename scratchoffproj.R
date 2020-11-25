@@ -246,12 +246,13 @@ get_granular_info_prizes <- function(x) {
   #                         total_prizes = sum(tbl$total_prizes),
   #                         remaining_prizes = sum(tbl$prizes_remaining))
   
-  return_obj <- tbl
+  return_obj <- tbl  %>% select(game_number, everything())
 }
 
 game_prizes <- purrr::map_df(games_enh$game_number, get_granular_info_prizes) %>% mutate(
   AOdate = today()
 )
+  
 
 game_summaries <-
   game_prizes %>% ungroup() %>% 
@@ -278,5 +279,5 @@ game_info <- games_enh %>%
          last_day_to_sell,
          last_day_to_redeem,
          ending
-         ) %>% 
+         ) %>% ungroup() %>% 
   mutate(AOdate = today())
