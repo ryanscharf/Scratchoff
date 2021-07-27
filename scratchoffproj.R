@@ -184,7 +184,9 @@ get_granular_info_prizes <- function(x) {
                odds_of_winning, 
                '1-in-')
            ),
-           odds_of_winning = 1/odds_denominator
+           odds_of_winning = 1/odds_denominator,
+           total_prizes = parse_number(total_prizes),
+           prizes_remaining = parse_number(prizes_remaining)
     )
   
   text <- page %>%
@@ -251,8 +253,7 @@ get_granular_info_prizes <- function(x) {
 
 game_prizes <- purrr::map_df(games_enh$game_number, get_granular_info_prizes) %>% mutate(
   AOdate = today()
-)
-  
+) %>% select(-prizes_paid)
 
 game_summaries <-
   game_prizes %>% ungroup() %>% 
