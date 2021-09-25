@@ -160,7 +160,7 @@ game_overview_table <- function(aodate, con = con, positive_ev = T){
   
   query <- glue("SELECT distinct
     a.game_number, a.aodate, b.game_name, a.expected_value_current, 
-    a.expected_value_current/b.ticket_cost as percent_ev,
+    a.expected_return_current/b.ticket_cost as percent_ev,
     b.ticket_cost, c.total_prizes as total_top_prizes,
 c.prizes_remaining as top_prizes_remaining, b.last_day_to_sell
 
