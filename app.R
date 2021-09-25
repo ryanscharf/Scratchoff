@@ -138,7 +138,8 @@ shinyApp(
         game_overview_table(aodate = aodate(), con = con), 
         options = list(lengthChange = FALSE,
                        paging = FALSE)
-      ) %>% formatRound(columns=c('expected_value_current'), digits=2)
+      ) %>% formatRound(columns=c('expected_value_current'), digits=2) %>%
+        formatPercentage(columns =c('percent_ev'), digits = 0)
     )
     
   }
