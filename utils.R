@@ -148,8 +148,9 @@ plot_prizes_left <- function(df = prize_data()){
     theme_few() + 
     scale_y_continuous(labels = scales::dollar_format()) + 
     ggtitle('Remaining Prizes') + 
-    scale_fill_manual(values = c(NA, 'grey')) +
+    scale_fill_manual(values = c(NA, 'grey'), na.value = NA) +
     theme(legend.position = 'none')
+
 }
 
 

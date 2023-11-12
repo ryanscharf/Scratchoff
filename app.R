@@ -52,7 +52,8 @@ shinyApp(
                  #   'game_names',
                  #   'Game: ',
                  #   avaliable_games)
-                 uiOutput('avaliable_games')
+                 uiOutput('avaliable_games'),
+                 numericInput('lag', 'Time span (months): ', value = 3)
     ),
     mainPanel(
     plotOutput('prizes_left_graph'),
@@ -70,7 +71,7 @@ shinyApp(
     aodate <- reactive({input$aodates})
     selected_game_number <- reactive({ input$game_names %>% str_extract('.+(?= -)') })
     selected_game_name <- reactive({ input$game_names %>% str_extract('(?<=- ).+') })
-
+    selected_lag <- reactive({input$lag})
     game_info <- reactive({
       rquery(
         con,
@@ -128,14 +129,18 @@ shinyApp(
     output$ev_change_graph <- renderPlot({
       asofdate <-  aodate()
       game_number <- selected_game_number()[1]
+      lag <- selected_lag()
      #browser()
-      plot_ev_change(asofdate = asofdate, game_number = game_number, con = con)
+      plot_ev_change(asofdate = asofdate, 
+                     game_number = game_number,
+                     con = con,
+                     lag = lag)
     })
     
     output$game_overview_table = renderDT(
       
       DT::datatable(
-        game_overview_table(aodate = aodate(), con = con), 
+        game_overview_table(aodate = aodate(), con = con, positive_ev = F), 
         options = list(lengthChange = FALSE,
                        paging = FALSE)
       ) %>% formatRound(columns=c('expected_value_current'), digits=2) %>%
