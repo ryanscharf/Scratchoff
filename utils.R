@@ -174,6 +174,7 @@ FROM
     c.prize_amount = b.top_prize 
 WHERE
     cast(c.AOdate as date) = CAST('{aodate}' AS DATE) and 
+    cast(b.AOdate as date) = CAST('{aodate}' AS DATE) and 
     cast(a.AOdate as date) = CAST('{aodate}' AS DATE) #and 
     #expected_value_current > 0 
     
