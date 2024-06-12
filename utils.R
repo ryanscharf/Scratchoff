@@ -127,16 +127,15 @@ plot_ev_change <- function(game_number, # = selected_game_number(),
 
 plot_prizes_left <- function(df = prize_data()){
   df %>% select(game_number, prize_amount, total_prizes, prizes_remaining, AOdate) %>%
-    #group_by(game_number, prize_amount, AOdate) %>%  
+    mutate(prizes_claimed = total_prizes-prizes_remaining) %>%
     pivot_longer(
-      cols = c('total_prizes', 'prizes_remaining'),
+      cols = c('prizes_claimed', 'prizes_remaining'),
       names_to = 'prize_split', 
       values_to = 'prize_value') %>%
     mutate(prize_split = factor(prize_split,
-                                levels = c('total_prizes','prizes_remaining')
-    )
+                                levels = c('prizes_claimed','prizes_remaining')
+                                )
     ) %>% 
-    #ungroup() %>% 
     ggplot() +
     geom_col(
       aes(x = as.factor(prize_amount),
