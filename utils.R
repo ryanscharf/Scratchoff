@@ -37,17 +37,17 @@ scratch_db <- function(conn){
     }
 }
 
-rquery <- function(conn = con, query){
-  
-  #conn <- scratch_db(conn)
-  #conn <- con
-  
-  result <- dbGetQuery(conn, query)
-  
-  #dbDisconnect(conn)
-  
-  return(result)
-}
+# rquery <- function(conn = con, query){
+#   
+#   #conn <- scratch_db(conn)
+#   #conn <- con
+#   
+#   result <- dbGetQuery(conn, query)
+#   
+#   #dbDisconnect(conn)
+#   
+#   return(result)
+# }
 
 # ev change ---------------------------------------------------------------
 
@@ -63,7 +63,7 @@ plot_ev_change <- function(game_number, # = selected_game_number(),
   
   lagdate <- asofdate %m-% months(lag, abbreviate = F)
   game_summary <-
-    rquery(
+    dbGetQuery(
       con,
       glue(
         "SELECT * FROM scratchoff.game_summaries

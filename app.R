@@ -10,6 +10,7 @@ library(pool)
 library(glue)
 library(config)
 library(shinycssloaders)
+library(httr2)
 
 #library(bs4Dash)
 source('utils.R')
@@ -26,8 +27,9 @@ con <- dbPool(RMariaDB::MariaDB(),
               )
 
 AOdates <- #dbGetQuery
-  rquery(con, 'SELECT distinct AOdate
-FROM scratchoff.game_info order by aodate desc')
+  dbGetQuery(con, 'SELECT distinct AOdate
+FROM scratchoff.game_info order by aodate desc
+         limit 25')
 
 # the dashboard -----------------------------------------------------------
 
@@ -71,10 +73,10 @@ shinyApp(
     
     aodate <- reactive({input$aodates})
     selected_game_number <- reactive({ input$game_names %>% str_extract('.+(?= -)') })
-    selected_game_name <- reactive({ input$game_names %>% str_extract('(?<=- ).+') })
+    # selected_game_name <- reactive({ input$game_names %>% str_extract('(?<=- ).+') })
     selected_lag <- reactive({input$lag})
     game_info <- reactive({
-      rquery(
+      dbGetQuery(
         con,
         paste0(
           "SELECT distinct
@@ -94,7 +96,7 @@ shinyApp(
     })
     
     prize_data <- reactive({ #dbGetQuery
-      rquery(con,
+      dbGetQuery(con,
                               paste0("SELECT * FROM scratchoff.game_prizes where game_number = '",
                                     selected_game_number(),
                                     "' and aodate = '", aodate(), "'"))
@@ -131,11 +133,15 @@ shinyApp(
       asofdate <-  aodate()
       game_number <- selected_game_number()[1]
       lag <- selected_lag()
-     #browser()
+# browser
+      tryCatch({
       plot_ev_change(asofdate = asofdate, 
                      game_number = game_number,
-                     con = con,
+                     con,
                      lag = lag)
+        },  error = function(e) {""} # Leave this line as-is.
+      )
+      
     })
     
     output$game_overview_table = renderDT(
