@@ -156,7 +156,7 @@ plot_prizes_left <- function(df = prize_data()){
 # game summary table ------------------------------------------------------
 
 
-game_overview_table <- function(aodate, con = con, positive_ev = T){
+game_overview_table <- function(aodate, conn = con, positive_ev = T){
   
   query <- glue("SELECT distinct
     a.game_number, a.aodate, b.game_name, a.expected_value_current, 
@@ -179,7 +179,7 @@ WHERE
     
 ORDER BY expected_value_current DESC")
   
-  result <- rquery(con, query)
+  result <- dbGetQuery(conn, query)
   result <- result %>% mutate(expected_value_current = 
                                 parse_number(
                                   format(
@@ -192,5 +192,28 @@ ORDER BY expected_value_current DESC")
     result <- result %>% filter(expected_value_current > 0)
   }
   
-  return(result)
+  return(result %>% mutate(pic_url = get_scratcher_pics(game_number)))
+}
+
+
+
+# get scrachoff image url -------------------------------------------------
+
+
+
+
+get_scratcher_pic <- function(game_number){
+  b <- glue('https://floridalottery.com/content/flalottery-web/us/en/games/scratch-offs/view.scratch-offs.{game_number}.json') %>% 
+    request() %>% 
+    req_headers('X-Partner' = 'web') %>%
+    req_perform() %>% 
+    resp_body_json()
+  
+  pic <- paste0('https://floridalottery.com',b[['data']][['ticketFront']])
+  pic <-  paste0("<a href='",pic,"'>",pic,"</a>")
+  return(pic)
+}
+
+get_scratcher_pics <- function(game_numbers) {
+  map_chr(game_numbers, get_scratcher_pic)
 }

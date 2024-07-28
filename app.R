@@ -9,6 +9,7 @@ library(pool)
 #library(dbplyr)
 library(glue)
 library(config)
+library(shinycssloaders)
 
 #library(bs4Dash)
 source('utils.R')
@@ -38,7 +39,7 @@ shinyApp(
       tabPanel("Games Overview",
                fluidRow(
                  mainPanel(
-                   DTOutput('game_overview_table'))
+                   withSpinner(DTOutput('game_overview_table')))
                  )
       
       ),
@@ -56,8 +57,8 @@ shinyApp(
                  numericInput('lag', 'Time span (months): ', value = 3)
     ),
     mainPanel(
-    plotOutput('prizes_left_graph'),
-    plotOutput('ev_change_graph'),
+      withSpinner(plotOutput('prizes_left_graph')),
+      withSpinner(plotOutput('ev_change_graph')),
     textOutput('test1')
     )
     )
@@ -141,6 +142,7 @@ shinyApp(
       
       DT::datatable(
         game_overview_table(aodate = aodate(), con = con, positive_ev = F), 
+        escape = FALSE,
         options = list(lengthChange = FALSE,
                        paging = FALSE)
       ) %>% formatRound(columns=c('expected_value_current'), digits=2) %>%
