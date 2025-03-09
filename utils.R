@@ -4,8 +4,8 @@
 scratch_db <- function(conn){
   if(exists(
     deparse(substitute(conn))
-    ) == F){
-
+  ) == F){
+    
     con <- dbPool(RMariaDB::MariaDB(),
                   host = conn_args$host, 
                   port = conn_args$port, 
@@ -15,39 +15,39 @@ scratch_db <- function(conn){
                   minSize = conn_args$minSize,
                   idleTimeout = conn_args$idleTimeout
     )
-  cat('connection didnt exist \n')
-  con
-  # } else if (dbIsValid(con) == F ) {
-  #   cat('connection was dead \n')
-  #   
-  # con <- dbPool(RMariaDB::MariaDB(),
-  #               host = conn_args$host, 
-  #               port = conn_args$port, 
-  #               username = conn_args$username,
-  #               password = conn_args$password, 
-  #               db = conn_args$db,
-  #               minSize = conn_args$minSize,
-  #               idleTimeout = conn_args$idleTimeout
-  #)
-  
-  #   con
+    cat('connection didnt exist \n')
+    con
+    # } else if (dbIsValid(con) == F ) {
+    #   cat('connection was dead \n')
+    #   
+    # con <- dbPool(RMariaDB::MariaDB(),
+    #               host = conn_args$host, 
+    #               port = conn_args$port, 
+    #               username = conn_args$username,
+    #               password = conn_args$password, 
+    #               db = conn_args$db,
+    #               minSize = conn_args$minSize,
+    #               idleTimeout = conn_args$idleTimeout
+    #)
+    
+    #   con
   } else {
     cat('connection was fine \n')
     conn 
-    }
+  }
 }
 
-rquery <- function(conn = con, query){
-  
-  #conn <- scratch_db(conn)
-  #conn <- con
-  
-  result <- dbGetQuery(conn, query)
-  
-  #dbDisconnect(conn)
-  
-  return(result)
-}
+# rquery <- function(conn = con, query){
+#   
+#   #conn <- scratch_db(conn)
+#   #conn <- con
+#   
+#   result <- dbGetQuery(conn, query)
+#   
+#   #dbDisconnect(conn)
+#   
+#   return(result)
+# }
 
 # ev change ---------------------------------------------------------------
 
@@ -57,13 +57,13 @@ plot_ev_change <- function(game_number, # = selected_game_number(),
                            asofdate ,#= aodate(),
                            lag = 3,
                            con
-                           ) {
+) {
   
   asofdate <- ymd(asofdate)
   
   lagdate <- asofdate %m-% months(lag, abbreviate = F)
   game_summary <-
-    rquery(
+    dbGetQuery(
       con,
       glue(
         "SELECT * FROM scratchoff.game_summaries
@@ -80,8 +80,8 @@ plot_ev_change <- function(game_number, # = selected_game_number(),
     complete(AOdate = seq(
       min(
         game_summary$AOdate), 
-        asofdate, 
-        by = "1 day")) %>%
+      asofdate, 
+      by = "1 day")) %>%
     mutate(
       missing_data = case_when(!is.na(game_number) ~ 'not_missing', T ~ 'missing'),
       expected_value_current = na.approx(expected_value_current),
@@ -127,16 +127,15 @@ plot_ev_change <- function(game_number, # = selected_game_number(),
 
 plot_prizes_left <- function(df = prize_data()){
   df %>% select(game_number, prize_amount, total_prizes, prizes_remaining, AOdate) %>%
-    #group_by(game_number, prize_amount, AOdate) %>%  
+    mutate(prizes_claimed = total_prizes-prizes_remaining) %>%
     pivot_longer(
-      cols = c('total_prizes', 'prizes_remaining'),
+      cols = c('prizes_claimed', 'prizes_remaining'),
       names_to = 'prize_split', 
       values_to = 'prize_value') %>%
     mutate(prize_split = factor(prize_split,
-                                levels = c('total_prizes','prizes_remaining')
+                                levels = c('prizes_claimed','prizes_remaining')
     )
     ) %>% 
-    #ungroup() %>% 
     ggplot() +
     geom_col(
       aes(x = as.factor(prize_amount),
@@ -150,14 +149,14 @@ plot_prizes_left <- function(df = prize_data()){
     ggtitle('Remaining Prizes') + 
     scale_fill_manual(values = c(NA, 'grey'), na.value = NA) +
     theme(legend.position = 'none')
-
+  
 }
 
 
 # game summary table ------------------------------------------------------
 
 
-game_overview_table <- function(aodate, con = con, positive_ev = T){
+game_overview_table <- function(aodate, conn = con, positive_ev = T){
   
   query <- glue("SELECT distinct
     a.game_number, a.aodate, b.game_name, a.expected_value_current, 
@@ -174,12 +173,13 @@ FROM
     c.prize_amount = b.top_prize 
 WHERE
     cast(c.AOdate as date) = CAST('{aodate}' AS DATE) and 
+    cast(b.AOdate as date) = CAST('{aodate}' AS DATE) and 
     cast(a.AOdate as date) = CAST('{aodate}' AS DATE) #and 
     #expected_value_current > 0 
     
 ORDER BY expected_value_current DESC")
   
-  result <- rquery(con, query)
+  result <- dbGetQuery(conn, query)
   result <- result %>% mutate(expected_value_current = 
                                 parse_number(
                                   format(
@@ -192,5 +192,40 @@ ORDER BY expected_value_current DESC")
     result <- result %>% filter(expected_value_current > 0)
   }
   
-  return(result)
+  return(result %>% mutate(pic_url = get_scratcher_pics(game_number)))
+}
+
+
+
+# get scrachoff image url -------------------------------------------------
+
+
+
+
+get_scratcher_pic <- function(game_number) {
+  tryCatch({
+    b <- glue('https://floridalottery.com/content/flalottery-web/us/en/games/scratch-offs/view.scratch-offs.{game_number}.json') %>% 
+      request() %>% 
+      req_headers('X-Partner' = 'web') %>%
+      req_perform() %>% 
+      resp_body_json()
+    
+    pic <- paste0('https://floridalottery.com', b[['data']][['ticketFront']])
+    
+    # Wrap the image in an <a> tag to trigger JavaScript function
+    pic_html <- glue(
+      "<a href='#' onclick='showModal(\"{pic}\")'>
+         <img src='{pic}' alt='Game {game_number}' width='100' />
+       </a>"
+    )
+    
+    return(pic_html)
+  }, error = function(e) {
+    return("<span>Image not available</span>")
+  })
+}
+
+
+get_scratcher_pics <- function(game_numbers) {
+  map_chr(game_numbers, get_scratcher_pic)
 }
