@@ -51,7 +51,7 @@ shinyApp(ui = fluidPage(
   }
 
   // Close modal if clicking outside the image
-  document.addEventListener('click', function(event) {
+  document.addEventListener('cglick', function(event) {
     var modal = document.getElementById('imageModal');
     var modalImg = document.getElementById('modalImage');
     if (event.target === modal) {
