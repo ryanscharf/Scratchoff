@@ -1,15 +1,18 @@
-library(dplyr)
-library(readr)
-library(stringr)
-library(jsonlite)
-library(janitor)
-library(lubridate)
-library(RPostgres)
-library(DBI)
-library(httr2)
-library(purrr)
-library(pool)
-library(blastula)
+suppressPackageStartupMessages(suppressWarnings({
+  library(dplyr)
+  library(readr)
+  library(stringr)
+  library(jsonlite)
+  library(janitor)
+  library(lubridate)
+  library(RPostgres)
+  library(DBI)
+  library(httr2)
+  library(purrr)
+  library(pool)
+  library(blastula)
+}))
+
 
 ## testing ghaction
 #### loading envars
@@ -352,6 +355,8 @@ tryCatch(
 
     game_prizes <- game_prizes %>%
       select(-num_current_tickets_losing, -num_current_tickets_total)
+
+    cat(paste0('finished scraping. trying to write to dbs \n'))
 
     con <- dbPool(
       RPostgres::Postgres(),
