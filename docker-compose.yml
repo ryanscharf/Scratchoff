@@ -1,0 +1,30 @@
+services:
+  scratchoff-scraper:
+    image: ghcr.io/ryanscharf/scratchoff-scraper:latest
+    container_name: scratchoff-scraper
+    restart: unless-stopped
+    environment:
+      - TZ=America/New_York
+      # Database
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_MIN_SIZE=${DB_MIN_SIZE}
+      - DB_IDLE_TIMEOUT=${DB_IDLE_TIMEOUT}
+      # Email
+      - EMAIL_FROM=${EMAIL_FROM}
+      - EMAIL_TO=${EMAIL_TO}
+      - EMAIL_SMTP_HOST=${EMAIL_SMTP_HOST}
+      - EMAIL_SMTP_PORT=${EMAIL_SMTP_PORT}
+      - EMAIL_USERNAME=${EMAIL_USERNAME}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_USE_SSL=${EMAIL_USE_SSL}
+      - EMAIL_SEND_SUCCESS=${EMAIL_SEND_SUCCESS}
+    networks:
+      - scratchoff-network
+
+networks:
+  scratchoff-network:
+    driver: bridge

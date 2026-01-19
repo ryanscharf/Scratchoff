@@ -1,0 +1,44 @@
+# R files
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# RStudio temporary files
+.Rproj.user/
+
+# Sensitive config
+config.yml
+.env
+
+# Packrat/renv
+packrat/
+renv/
+renv.lock
+
+# pkgdown
+docs/
+pkgdown/
+
+# knitr and R markdown
+*.utf8.md
+*.knit.md
+.Rmd.user
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Temp files
+*.tar
+*.xml
+*.dcf
+*.iml
+
+# Data files (if you have large data)
+*.RData
+*.rda
+*.rds
