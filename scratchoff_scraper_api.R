@@ -11,8 +11,31 @@ library(purrr)
 library(pool)
 library(blastula)
 
-conn_args <- config::get("writeconnection")
-email_config <- config::get("email")
+## testing ghaction
+#### loading envars
+# conn_args <- config::get("writeconnection")
+# email_config <- config::get("email")
+
+conn_args <- list(
+  host = Sys.getenv("DB_HOST", "192.168.2.66"),
+  port = as.integer(Sys.getenv("DB_PORT", "5432")),
+  username = Sys.getenv("DB_USERNAME"),
+  password = Sys.getenv("DB_PASSWORD"),
+  dbname = Sys.getenv("DB_NAME", "scratchoff"),
+  minSize = as.integer(Sys.getenv("DB_MIN_SIZE", "0")),
+  idleTimeout = as.integer(Sys.getenv("DB_IDLE_TIMEOUT", "6000"))
+)
+
+email_config <- list(
+  from = Sys.getenv("EMAIL_FROM"),
+  to = Sys.getenv("EMAIL_TO"),
+  smtp_host = Sys.getenv("EMAIL_SMTP_HOST", "smtp.gmail.com"),
+  smtp_port = as.integer(Sys.getenv("EMAIL_SMTP_PORT", "465")),
+  username = Sys.getenv("EMAIL_USERNAME"),
+  password = Sys.getenv("EMAIL_PASSWORD"),
+  use_ssl = as.logical(Sys.getenv("EMAIL_USE_SSL", "TRUE")),
+  send_success = as.logical(Sys.getenv("EMAIL_SEND_SUCCESS", "FALSE"))
+)
 Sys.setenv(EMAIL_PASSWORD = email_config$password)
 
 #### email functions
