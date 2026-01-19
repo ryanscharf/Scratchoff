@@ -399,6 +399,8 @@ tryCatch(
     )
     cat(paste0("wrote ", nrow(game_summaries), " rows to game_summaries\n"))
 
+    poolClose(con)
+
     # Send success notification
     send_success_email(nrow(game_info), nrow(game_prizes), nrow(game_summaries))
   },
