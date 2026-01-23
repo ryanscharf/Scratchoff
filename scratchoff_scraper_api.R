@@ -364,7 +364,7 @@ tryCatch(
       port = conn_args$port,
       user = conn_args$username,
       password = conn_args$password,
-      dbname = conn_args$db,
+      dbname = conn_args$dbname,
       minSize = conn_args$minSize,
       idleTimeout = conn_args$idleTimeout
     )
