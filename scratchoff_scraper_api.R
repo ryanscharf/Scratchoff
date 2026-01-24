@@ -206,71 +206,86 @@ replace_string_null_with_na <- function(x) {
   return(x)
 }
 
+retry_api_call <- function(expr, max_attempts = 3, base_delay = 2) {
+  for (attempt in 1:max_attempts) {
+    result <- tryCatch(
+      {
+        return(expr)
+      },
+      error = function(e) {
+        if (attempt < max_attempts) {
+          delay <- base_delay^attempt
+          message(sprintf(
+            "Attempt %d failed: %s. Retrying in %d seconds...",
+            attempt,
+            e$message,
+            delay
+          ))
+          Sys.sleep(delay)
+          NULL # Continue to next iteration
+        } else {
+          message(sprintf(
+            "All %d attempts failed: %s",
+            max_attempts,
+            e$message
+          ))
+          stop(e) # Re-throw on final attempt
+        }
+      }
+    )
+    if (!is.null(result)) return(result)
+  }
+}
+
 #### Scraping start
 tryCatch(
   {
-    ending_games <- tryCatch(
-      {
-        response <- "https://apim-website-prod-eastus.azure-api.net/scratchgamesapp/getEndingGames" %>%
-          request() %>%
-          req_headers('X-Partner' = 'web') %>%
-          req_perform() %>%
-          resp_body_json()
+    ending_games <- retry_api_call({
+      response <- "https://apim-website-prod-eastus.azure-api.net/scratchgamesapp/getEndingGames" %>%
+        request() %>%
+        req_headers('X-Partner' = 'web') %>%
+        req_perform() %>%
+        resp_body_json()
 
-        # Check if the response is empty (an empty array)
-        if (length(response) == 0) {
-          # Return an empty dataframe with the expected columns
-          data.frame(
-            game_number = integer(),
-            last_day_to_sell = as.Date(character()),
-            last_day_to_redeem = as.Date(character()),
-            stringsAsFactors = FALSE
-          )
-        } else {
-          # Process as normal if there's data
-          response %>%
-            bind_rows() %>%
-            clean_names() %>%
-            mutate(
-              game_number = id,
-              last_day_to_sell = ymd(ymd_hms(last_day_to_sell)),
-              last_day_to_redeem = ymd(ymd_hms(last_day_to_redeem))
-            ) %>%
-            select(game_number, last_day_to_sell, last_day_to_redeem)
-        }
-      },
-      error = function(e) {
-        # Handle any errors by returning an empty dataframe
-        message("Error fetching data: ", e$message)
+      if (length(response) == 0) {
         data.frame(
-          game_number = character(),
+          game_number = integer(),
           last_day_to_sell = as.Date(character()),
           last_day_to_redeem = as.Date(character()),
           stringsAsFactors = FALSE
         )
+      } else {
+        response %>%
+          bind_rows() %>%
+          clean_names() %>%
+          mutate(
+            game_number = id,
+            last_day_to_sell = ymd(ymd_hms(last_day_to_sell)),
+            last_day_to_redeem = ymd(ymd_hms(last_day_to_redeem))
+          ) %>%
+          select(game_number, last_day_to_sell, last_day_to_redeem)
       }
-    )
+    })
 
     #ending games do not show up on https://floridalottery.com/games/scratch-offs/top-remaining-prizes
     # but do show up in the API table
 
-    games <- "https://apim-website-prod-eastus.azure-api.net/scratchgamesapp/getTopPrizesRemaining" %>%
-      request() %>%
-      req_headers('X-Partner' = 'web') %>%
-      req_perform() %>%
-      resp_body_json() %>%
-      map(replace_string_null_with_na) %>%
-      discard(~ is.na(.x['TopPrizes'])) %>%
-      #try to replace the 'null' TopPrizes with NA
-      #bind_rows keeps dropping rows. IT converts NAs to NULLs
-      # map_depth(1, replace_x) %>%
-      bind_rows() %>%
-      mutate(
-        bind_rows(TopPrizes)
-      ) %>%
-      clean_names() %>%
-      select(-top_prizes) %>%
-      rename(game_number = id)
+    games <- retry_api_call({
+      "https://apim-website-prod-eastus.azure-api.net/scratchgamesapp/getTopPrizesRemaining" %>%
+        request() %>%
+        req_headers('X-Partner' = 'web') %>%
+        req_perform() %>%
+        resp_body_json() %>%
+        map(replace_string_null_with_na) %>%
+        discard(~ is.na(.x['TopPrizes'])) %>%
+        bind_rows() %>%
+        mutate(
+          bind_rows(TopPrizes)
+        ) %>%
+        clean_names() %>%
+        select(-top_prizes) %>%
+        rename(game_number = id)
+    })
 
     games_cleaned <- games %>%
       transmute(
