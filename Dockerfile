@@ -18,10 +18,18 @@ RUN R -e "pak::pkg_install(c('dplyr','stringr','readr','jsonlite','janitor','lub
 
 WORKDIR /home/r-environment
 
+# Create environment export script
+RUN echo '#!/bin/bash\n\
+# Export Docker environment variables to file\n\
+cat /proc/1/environ | tr "\\0" "\\n" | grep -E "^(DB_|EMAIL_)" > /tmp/docker.env' > /docker-entrypoint.sh && \
+    chmod +x /docker-entrypoint.sh
+
 # Create a script that pulls latest code and runs scraper
 RUN echo '#!/bin/bash\n\
-# Export all environment variables for R\n\
-export $(printenv | grep -E "^(DB_|EMAIL_)" | xargs)\n\
+# Load environment variables\n\
+if [ -f /tmp/docker.env ]; then\n\
+  export $(cat /tmp/docker.env | xargs)\n\
+fi\n\
 cd /home/r-environment\n\
 rm -rf temp_repo\n\
 git clone https://github.com/ryanscharf/Scratchoff.git temp_repo\n\
@@ -39,4 +47,4 @@ RUN echo "0 3 * * * /home/r-environment/run_scraper.sh >> /var/log/cron.log 2>&1
 RUN touch /var/log/cron.log
 
 # Run cron in foreground
-CMD ["sh", "-c", "cron && tail -f /var/log/cron.log"]
+CMD ["sh", "-c", "/docker-entrypoint.sh && cron && tail -f /var/log/cron.log"]
