@@ -42,3 +42,5 @@ pkgdown/
 *.RData
 *.rda
 *.rds
+Dockerfile
+*.log
