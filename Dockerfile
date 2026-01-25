@@ -20,6 +20,8 @@ WORKDIR /home/r-environment
 
 # Create a script that pulls latest code and runs scraper
 RUN echo '#!/bin/bash\n\
+# Export all environment variables for R\n\
+export $(printenv | grep -E "^(DB_|EMAIL_)" | xargs)\n\
 cd /home/r-environment\n\
 rm -rf temp_repo\n\
 git clone https://github.com/ryanscharf/Scratchoff.git temp_repo\n\
