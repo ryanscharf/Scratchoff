@@ -21,14 +21,16 @@ WORKDIR /home/r-environment
 # Create environment export script
 RUN echo '#!/bin/bash\n\
 # Export Docker environment variables to file\n\
-cat /proc/1/environ | tr "\\0" "\\n" | grep -E "^(DB_|EMAIL_|TZ)" > /tmp/docker.env' > /docker-entrypoint.sh && \
+printenv | grep -E "^(DB_|EMAIL_|TZ)=" > /tmp/docker.env' > /docker-entrypoint.sh && \
     chmod +x /docker-entrypoint.sh
 
 # Create a script that pulls latest code and runs scraper
 RUN echo '#!/bin/bash\n\
 # Load environment variables\n\
 if [ -f /tmp/docker.env ]; then\n\
-  export $(cat /tmp/docker.env | xargs)\n\
+    set -a\n\
+    . /tmp/docker.env\n\
+    set +a\n\
 fi\n\
 cd /home/r-environment\n\
 rm -rf temp_repo\n\
